@@ -204,21 +204,13 @@ cell* get_cells(char** pre_cell, char data_type, int index, int len, char** head
 	return cells;
 }
 
-int sort_file(char* file_path, char* dts, char* filename, char* header_to_sort, char* od) {
+table* sort_file(char* file_path, int cell_index) {
 	FILE* fp = fopen(file_path, "r");
-	char sort_type = get_type(header_to_sort);
-    if(sort_type == 'E') {
-        fprintf(stderr, "Could not sort file %s: %s is not a valid header", filename, header_to_sort);
-        exit(0);
-    }
+	char sort_type = h_types[index];
 	char buff[BUFSIZ];
 	char *read = fgets(buff, sizeof buff, fp);
 	int no_of_cols = 0;
 	char** headers = split_by_comma(buff, &no_of_cols);
-	int cell_index = -1;
-	char* check_for_pre_sort = (char*)malloc(strlen(header_to_sort) + 10);
-	sprintf(check_for_pre_sort, "%s-sorted-", header_to_sort);
-	if(strstr(filename, check_for_pre_sort) != NULL) return 0;
 	int i;
     for(i = 0; i < no_of_cols; i++) {
         if(exists(headers[i]) == false) {
@@ -226,7 +218,6 @@ int sort_file(char* file_path, char* dts, char* filename, char* header_to_sort, 
 			exit(0);
         }
     }
-	cell_index = get_header_p(header_to_sort)->index;
     table* main_table = create_table();
     main_table->header = g_headers;
     read = fgets(buff, sizeof buff, fp);
@@ -243,36 +234,10 @@ int sort_file(char* file_path, char* dts, char* filename, char* header_to_sort, 
         read = fgets(buff, sizeof buff, fp);
     }
     datarow* sorted = mergesort(main_table->rows, cell_index, main_table->size);
-    FILE* fout;
-    if(od==NULL) { // od is null means that there is no specified output directory
-        char* new_name = (char*)malloc(strlen(file_path) + strlen(header_to_sort) + 10);
-        sprintf(new_name, "%s/%s-sorted-%s", dts, header_to_sort, filename);
-        if((fout=fopen(new_name, "w"))==NULL) {
-            perror("Cannot open file.\n");
-            exit(0);
-        }
-    }
-    else { // od is specified already.                                    
-        char* new_name = (char*)malloc(strlen(od) + strlen(header_to_sort) + 10);
-        if(od[strlen(od)-1] != '/')
-            sprintf(new_name, "%s/%s-sorted-%s", od, header_to_sort, filename);
-        else
-            sprintf(new_name, "%s%s-sorted-%s", od, header_to_sort, filename);
-            
-        if((fout=fopen(new_name, "w"))==NULL) {
-            perror("Cannot open file.\n");
-            exit(0);
-        }
-    }
-    print_header(headers, no_of_cols, fout);
-    int j;
-    for(j = 0; j < main_table->size; ++j){
-        print_row(&(sorted[j]), fout);
-    }
-    fclose(fout);
-	
+	main_table->rows = sorted;
+
 	fclose(fp);
-	return 1;
+	return main_table;
 }
 
 unsigned long hash(unsigned char *str)

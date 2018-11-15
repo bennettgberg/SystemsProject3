@@ -24,7 +24,7 @@ void print_row(datarow* row, FILE* stream);
 char get_type(char* val);
 
 // sort a file, returns 1
-int sort_file(char* file_path, char* directory_path, char* filename, char* header, char* od);
+table* sort_file(char* file_path, int index);
 
 typedef struct {
 	int hash;
