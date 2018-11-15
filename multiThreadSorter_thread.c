@@ -4,11 +4,26 @@
 
 pthread_mutex_t lock;
 int counter;
+char * header_to_sort, output_directory;
+pthread_t tid[256];
 
-int recursive_scan_and_sort(char* dts, char* header, char* od) {
-	DIR *dir = opendir(dts);
-	pid_t ftid, dtid; //directory pid and file pid
+void * file_sort(void * file_to_sort) {
+	char * fname = (char*)file_to_sort;
+	if( strlen(fname) >= 4 && 
+	fname[name_len - 1] == 'v' && 
+	fname[name_len - 2] == 's' && 
+	fname[name_len - 3] == 'c' &&
+	fname[name_len - 4] == '.'){
+	//separate directory_to_search and filename***********
+		sort_file(fname, dts, filename, header_to_sort, output_directory);
+	} //end file is .csv
+	return NULL;
+}
+
+void * directory_scan(void * directory_to_search) {
+	DIR *dir = opendir((char*)directory_to_search);
 	int count = 0;
+	int error;
 	if(dir != NULL) {
 		struct dirent *de;
 		de = readdir(dir); // skip .
@@ -22,58 +37,36 @@ int recursive_scan_and_sort(char* dts, char* header, char* od) {
 			}
 			sprintf(new_name, "%s/%s", dts, de->d_name);
 			if(de->d_type & DT_DIR) {
-				dpid = fork();
-				if(dpid < 0){
-					fprintf(stderr, "Error: could not fork for directory %s", new_name);
-					exit(0);
+				error = pthread_create(&tid[counter], NULL, directory_scan, (void *)new_name);
+				if(error != 0){
+					fprintf(stderr, "Error: could not create thread for directory %s: error %d", new_name, error);
+					return NULL;
 				}
-				else if(dpid > 0){
-					int eval = 0;
-					wait(&eval);
-					count += WEXITSTATUS(eval);
-					while(*lock == LOCKED);
-					*lock = LOCKED;
-					*size += 1;
-					*lock = UNLOCKED;
-				}
-				else {
-					printf("%d ", getpid());
-					count += recursive_scan_and_sort(new_name, header, od);
-					free(new_name);
-					exit(count);
-				}
+				//lock the mutex to print and increment the shared counter.
+				pthread_mutex_lock(&lock); 
+				printf("%d ", tid[counter++]);
+				//now that we're done with it, unlock.
+				pthread_mutex_unlock(&lock);
+				free(new_name);
 			}
-			else {
-				fpid = fork();
-				if(fpid == 0) {
-					printf("%d ", getpid());
-					fflush(stdout);
-					if(
-					name_len >= 4 && 
-					de->d_name[name_len - 1] == 'v' && 
-					de->d_name[name_len - 2] == 's' && 
-					de->d_name[name_len - 3] == 'c' &&
-					de->d_name[name_len - 4] == '.'){
-						sort_file(new_name, dts, de->d_name, header, od);
-					} //end file is .csv
-					free(new_name);
-					exit(1);
-				} //end this is child process
-				else {
-					int eval = 0;
-					wait(&eval);
-					count += WEXITSTATUS(eval);
-					while(*lock == LOCKED);
-					*lock = LOCKED;
-					*size += 1;
-					*lock = UNLOCKED;
-			     } //end this is parent process
-			} //end not a directory
+			else { //de is actually a file.
+				error = pthread_create(&tid[counter], NULL, file_sort, (void *)new_name);
+				if(error != 0){
+					fprintf(stderr, "Error: could not create thread for directory %s: error %d", new_name, error);
+					return NULL;
+				}
+				pthread_mutex_lock(&lock); 
+				printf("%d ", tid[counter++]);
+				pthread_mutex_unlock(&lock);
+				pthread_join(tid[counter], NULL);
+				free(new_name);
+				return NULL;
+			} //end this is a file
 		} //end while readdir not null
 		
 		closedir(dir);
 	} //end if dir not null
-	return count;
+	return NULL;
 }
 
 int main(int argc, char* argv[]) {
@@ -83,7 +76,9 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 	int i = 1;
-	char *header_to_sort = NULL, *directory_to_search = NULL, *output_directory = NULL;
+	header_to_sort = NULL;
+	output_directory = NULL;
+	char *directory_to_search = NULL;
 	for(i = 1; i < argc; i++) {
 		if(strcmp(argv[i], "-c") == 0) {
 			i++;
@@ -134,8 +129,15 @@ int main(int argc, char* argv[]) {
 	//run recursive_scan_and_sort.
 	printf("Initial PID: %d\n", getpid());
 	printf("TIDs of all spawned threads: ");
-	recursive_scan_and_sort(directory_to_search, header_to_sort, output_directory);
-	
+	int mut = pthread_mutex_init(&lock, NULL); 
+	if (mut != 0) { 
+		fprintf(stdout, "Error: mutex initialization failed: %d\n", mut); 
+		fprintf(stderr, "Error: mutex initialization failed: %d\n", mut); 
+		return 0; 
+	} 
+	directory_scan((void*)directory_to_search);
+	//destroy mutex lock now that we're done with it.
+	pthread_mutex_destroy(&lock);
 	printf("\nTotal number of threads: %d\n", counter); //Just size instead of size+1 because main process doesn't count.
 	return 0;
 }
