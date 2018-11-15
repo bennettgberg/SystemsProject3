@@ -12,8 +12,6 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include "fixcolumns.h"
-
 
 // define data types
 #define bool char
