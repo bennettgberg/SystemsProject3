@@ -82,10 +82,10 @@ void print_row(datarow* row, FILE* stream) {
 	fprintf(stream, "\n");
 }
 
-void print_header(char** vals, int n, FILE* stream) {
+void print_header(FILE* stream) {
 	int i = 0;
-	for(i = 0; i < n; i++) {
-		fprintf(stream, "%s", vals[i]);
+	for(i = 0; i < NUMHEADERS; i++) {
+		fprintf(stream, "%s", g_headers[i]);
 		if(i < n - 1) fprintf(stream, ",");
 	}
 	fprintf(stream, "\n");

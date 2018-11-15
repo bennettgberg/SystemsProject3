@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
 			exit(0);
 		}
 	}
-	print_header(g_headers, 28, fout); //Is this correct way to print headers?
+	print_header(fout); //Is this correct way to print headers?
 	for(i = 0; i < all_data->size; ++i){
 		print_row(&(all_data->rows[i]), fout);
 	}
