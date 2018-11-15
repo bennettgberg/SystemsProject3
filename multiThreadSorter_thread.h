@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <pthread.h>
 
 // define data types
 #define bool char
@@ -67,9 +68,19 @@ datarow * sort(datarow * data, int ndata, int index);
 
 datarow * mergesort(datarow * data, int index, int nrows );
 
-// recursive scanner sort, returns with number of forks created
-int recursive_scan_and_sort(char* dts, char* header, char* od, pid_t *pids, int* size, int* lock);
+// recursive threading function to scan directories, returns sorted table
+void * directory_scan(void * );
+
+//threading function to call sort_file, returns sorted table
+void * file_sort(void * );
 
 //
 unsigned long hash(unsigned char *str);
+
+//Global variables
+pthread_mutex_t lock;
+int counter;
+int header_ind;     //index of the header to sort on.
+pthread_t tid[256];
+
 #endif

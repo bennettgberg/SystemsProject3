@@ -45,6 +45,7 @@ datarow * merge(datarow * A, int nA, datarow * B, int nB, int index){
 	while(Bcount != nB) {
 		merged_data[Ccount++] = B[Bcount++];
 	} 
+//Free A and B?
 	return merged_data;
 }
 

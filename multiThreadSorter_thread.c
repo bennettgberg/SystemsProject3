@@ -2,33 +2,34 @@
 
 // implementation
 
-pthread_mutex_t lock;
-int counter;
-char * output_directory;
-int header_ind;     //index of the header to sort on.
-pthread_t tid[256];
 
 void * file_sort(void * tp) {
-	char * fname = (*((thread_pointer*)tp))->input;
+	thread_pointer* my_tp = (thread_pointer*)tp;
+	char ** input = my_tp->input;
+	char * fname = *input;
 	table * file_table = NULL;
-	name_len = strlen(fname);
+	int name_len = strlen(fname);
 	if( name_len >= 4 && 
 	fname[name_len - 1] == 'v' && 
 	fname[name_len - 2] == 's' && 
 	fname[name_len - 3] == 'c' &&
 	fname[name_len - 4] == '.'){
 	//sort the file, get an array 
-		*file_table = sort_file(fname, header_ind);
+		file_table = sort_file(fname, header_ind);
 	} //end file is .csv
-	((thread_pointer*)tp)->output = file_table;
-	return (void*)tp;
+	my_tp->output = file_table;
+	return tp;
 }
 
-void * directory_scan(void * directory_to_search) {
-	DIR *dir = opendir((char*)directory_to_search);
+void * directory_scan(void * tp) {
+	thread_pointer *my_tp = (thread_pointer*)tp;
+	char ** input = my_tp->input;
+	char* directory_to_search = *input; 
+	DIR *dir = opendir(directory_to_search);
 	int count = 0;
 	int error;
-	table result;
+	table * result;
+	result->size = 0;
 	if(dir != NULL) {
 		struct dirent *de;
 		de = readdir(dir); // skip .
@@ -71,11 +72,16 @@ void * directory_scan(void * directory_to_search) {
 				free(new_name);	
 				return NULL;
 			} //end this is a file
-		//Now, merge results to result table. 
+		//Now, merge results to result table. Should the merge function free the now-unused memory??
+			table * output_table = ((thread_pointer*)tp)->output;	
+			int new_size = result->size + output_table->size;
+			result->rows = merge(result->rows, result->size, output_table->rows, output_table->size, header_ind);
+			result->size = new_size;
 		} //end while readdir not null	
 		closedir(dir);
 	} //end if dir not null
-	return NULL;
+	my_tp->output = result;	
+	return tp;
 }
 
 int main(int argc, char* argv[]) {
@@ -86,7 +92,7 @@ int main(int argc, char* argv[]) {
 	}
 	int i = 1;
 	char * header_to_sort = NULL;
-	output_directory = NULL;
+	char * output_directory = NULL;
 	char *directory_to_search = NULL;
 	for(i = 1; i < argc; i++) {
 		if(strcmp(argv[i], "-c") == 0) {
@@ -145,7 +151,40 @@ int main(int argc, char* argv[]) {
 		fprintf(stderr, "Error: mutex initialization failed: %d\n", mut); 
 		return 0; 
 	} 
-	directory_scan((void*)directory_to_search);
+	thread_pointer * tp = (thread_pointer*)malloc(sizeof(thread_pointer));
+	tp->input = &directory_to_search;
+	void * all_data_void = directory_scan((void*)tp);
+	thread_pointer * my_tp = (thread_pointer*)all_data_void;
+	table * all_data = my_tp->output;
+	char * od = output_directory;
+	//print out all data to new file.
+	FILE* fout;
+	if(output_directory==NULL) { // od is null means that there is no specified output directory
+		char* new_name = (char*)malloc(strlen(header_to_sort) + 21);
+		sprintf(new_name, "AllFiles-sorted-%s.csv", header_to_sort);
+		if((fout=fopen(new_name, "w"))==NULL) {
+			perror("Cannot open file.\n");
+			exit(0);
+		}
+	}
+	else { // od is specified already.
+		char* new_name = (char*)malloc(strlen(od) + strlen(header_to_sort) + 22);
+		if(od[strlen(od)-1] != '/')
+			sprintf(new_name, "%s/AllFiles-sorted-%s.csv", od, header_to_sort);
+		else
+			sprintf(new_name, "%sAllFiles-sorted-%s.csv", od, header_to_sort);
+
+		if((fout=fopen(new_name, "w"))==NULL) {
+			perror("Cannot open file.\n");
+			exit(0);
+		}
+	}
+	print_header(g_headers, 28, fout); //Is this correct way to print headers?
+	for(i = 0; i < all_data->size; ++i){
+		print_row(&(all_data->rows[i]), fout);
+	}
+	
+	fclose(fout);
 	//destroy mutex lock now that we're done with it.
 	pthread_mutex_destroy(&lock);
 	printf("\nTotal number of threads: %d\n", counter); //Just size instead of size+1 because main process doesn't count.
