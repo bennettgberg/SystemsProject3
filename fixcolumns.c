@@ -4,7 +4,7 @@
 
 property h_headers[HMAP];
 
-extern char* headers[] = {
+extern char* g_headers[] = {
         "color",
         "director_name",
         "num_critic_for_reviews",
@@ -68,7 +68,7 @@ extern char h_types[] = {
 
 char get_type(char* val) {
 	property* p = get_header_p(val);
-	if(p->index -1 && strcmp(val, headers[p->index]) == 0) return h_types[p->index];
+	if(p->index -1 && strcmp(val, g_headers[p->index]) == 0) return h_types[p->index];
 	return 'E';
 }
 
@@ -212,6 +212,12 @@ int sort_file(char* file_path, char* dts, char* filename, char* header_to_sort, 
 	sprintf(check_for_pre_sort, "%s-sorted-", header_to_sort);
 	if(strstr(filename, check_for_pre_sort) != NULL) return 0;
 	int i;
+    for(i = 0; i < no_of_cols; i++) {
+        if(exists(headers[i]) == false) {
+            fprintf(stderr, "Could not sort file %s: incorrect format", filename);
+			exit(0);
+        }
+    }
 	for(i = 0; i < no_of_cols; i++) {
 		if(!strcmp(headers[i], header_to_sort)) {
 			cell_index = i;
@@ -287,37 +293,37 @@ void initialize_headers() {
 	for(i = 0; i < HMAP; i++) {
 		h_headers[i].index = -1;
 	}
-        for(i = 0; i < 28; i++) {
-                printf(headers[i]);
-                int hsh = hash(headers[i]);
-                int index = hmap(hsh);
-                printf(":%d\n", index);
-                if(h_headers[index].index != -1)
-                        printf("duplicate!-----------------\n");
-		else {
-                        h_headers[index].hash = hsh;
-			h_headers[index].index = i;
-		}
+    for(i = 0; i < 28; i++) {
+        printf(g_headers[i]);
+        int hsh = hash(g_headers[i]);
+        int index = hmap(hsh);
+        printf(":%d\n", index);
+        if(h_headers[index].index != -1)
+                printf("duplicate!-----------------\n");
+        else {
+            h_headers[index].hash = hsh;
+            h_headers[index].index = i;
         }
+    }
 }
 
 bool exists(char* header) {
 	int hsh = hash(header);
 	int index = hmap(hsh);
-	if(h_headers[index].index != -1 && h_headers[index].hash == hsh && strcmp(header, headers[h_headers[index].index]) == 0) return true;
+	if(h_headers[index].index != -1 && h_headers[index].hash == hsh && strcmp(header, g_headers[h_headers[index].index]) == 0) return true;
 	return false;
 }
 
 int get_index_nc(char* header) {
 	int hsh = hash(header);
-        int index = hmap(hsh);
+    int index = hmap(hsh);
 	return h_headers[index].index;
 }
 
 property* get_header_p(char* header) {
 	int hsh = hash(header);
-        int index = hmap(hsh);
-        return &h_headers[index];
+    int index = hmap(hsh);
+    return &h_headers[index];
 }
 
 void testcols() {
