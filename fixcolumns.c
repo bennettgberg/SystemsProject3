@@ -86,7 +86,7 @@ void print_header(FILE* stream) {
 	int i = 0;
 	for(i = 0; i < NUMHEADERS; i++) {
 		fprintf(stream, "%s", g_headers[i]);
-		if(i < n - 1) fprintf(stream, ",");
+		if(i < NUMHEADERS - 1) fprintf(stream, ",");
 	}
 	fprintf(stream, "\n");
 }
