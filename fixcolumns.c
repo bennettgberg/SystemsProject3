@@ -1,12 +1,75 @@
 #include "fixcolumns.h"
 
+#define NUMHEADERS 28
+
+property h_headers[HMAP];
+
+extern char* headers[] = {
+        "color",
+        "director_name",
+        "num_critic_for_reviews",
+        "duration",
+        "director_facebook_likes",
+        "actor_3_facebook_likes",
+        "actor_2_name",
+        "actor_1_facebook_likes",
+        "gross",
+        "genres",
+        "actor_1_name",
+        "movie_title",
+        "num_voted_users",
+        "cast_total_facebook_likes",
+        "actor_3_name",
+        "facenumber_in_poster",
+        "plot_keywords",
+        "movie_imdb_link",
+        "num_user_for_reviews",
+        "language",
+        "country",
+        "content_rating",
+        "budget",
+        "title_year",
+        "actor_2_facebook_likes",
+        "imdb_score",
+        "aspect_ratio",
+        "movie_facebook_likes"
+};
+
+extern char h_types[] = {
+    STR,
+    STR,
+    FLOAT,
+    FLOAT,
+    FLOAT,
+    FLOAT,
+    STR,
+    FLOAT,
+    FLOAT,
+    STR,
+    STR,
+    STR,
+    FLOAT,
+    FLOAT,
+    STR,
+    FLOAT,
+    STR,
+    STR,
+    FLOAT,
+    STR,
+    STR,
+    STR,
+    FLOAT,
+    FLOAT,
+    FLOAT,
+    FLOAT,
+    FLOAT,
+    FLOAT
+};
+
 char get_type(char* val) {
-	if(strcmp(val, "color") == 0 || strcmp(val, "director_name") == 0 || strcmp(val, "actor_2_name") == 0 || strcmp(val, "genres") == 0 || strcmp(val, "actor_1_name") == 0 || strcmp(val, "movie_title") == 0 || strcmp(val, "actor_3_name") == 0 || strcmp(val, "plot_keywords") == 0  || strcmp(val, "movie_imdb_link") == 0 || strcmp(val, "language") == 0 || strcmp(val, "country") == 0 || strcmp(val, "content_rating") == 0) {
-		return STR;
-	}
-	else if( strcmp(val, "num_critic_for_reviews") == 0 ||  strcmp(val, "director_facebook_likes") == 0 ||  strcmp(val, "actor_3_facebook_likes") == 0 ||  strcmp(val, "actor_1_facebook_likes") == 0 ||  strcmp(val, "gross") == 0 ||  strcmp(val, "num_voted_users") == 0 ||  strcmp(val, "cast_total_facebook_likes") == 0 ||  strcmp(val, "facenumber_in_poster") == 0 ||  strcmp(val, "num_user_for_reviews") == 0 ||  strcmp(val, "budget") == 0 ||  strcmp(val, "title_year") == 0 ||  strcmp(val, "actor_2_facebook_likes") == 0 ||  strcmp(val, "imdb_score") == 0 ||  strcmp(val, "aspect_ratio") == 0 ||  strcmp(val, "movie_facebook_likes") == 0 || strcmp(val, "duration") == 0) 
-		return FLOAT;
-	return 'E'; //for Error
+	property* p = get_header_p(val);
+	if(p->index -1 && strcmp(val, headers[p->index]) == 0) return h_types[p->index];
+	return 'E';
 }
 
 void print_row(datarow* row, FILE* stream) {
@@ -217,4 +280,45 @@ unsigned long hash(unsigned char *str)
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
 
     return hash;
+}
+
+void initialize_headers() {
+	int i;
+	for(i = 0; i < HMAP; i++) {
+		h_headers[i].index = -1;
+	}
+        for(i = 0; i < 28; i++) {
+                printf(headers[i]);
+                int hsh = hash(headers[i]);
+                int index = hmap(hsh);
+                printf(":%d\n", index);
+                if(h_headers[index].index != -1)
+                        printf("duplicate!-----------------\n");
+		else {
+                        h_headers[index].hash = hsh;
+			h_headers[index].index = i;
+		}
+        }
+}
+
+bool exists(char* header) {
+	int hsh = hash(header);
+	int index = hmap(hsh);
+	if(h_headers[index].index != -1 && h_headers[index].hash == hsh && strcmp(header, headers[h_headers[index].index]) == 0) return true;
+	return false;
+}
+
+int get_index_nc(char* header) {
+	int hsh = hash(header);
+        int index = hmap(hsh);
+	return h_headers[index].index;
+}
+
+property* get_header_p(char* header) {
+	int hsh = hash(header);
+        int index = hmap(hsh);
+        return &h_headers[index];
+}
+
+void testcols() {
 }

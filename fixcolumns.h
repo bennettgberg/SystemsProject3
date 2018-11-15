@@ -3,6 +3,9 @@
 
 #include "multiThreadSorter_thread.h"
 
+#define HMAP 132
+#define hmap(key) (abs(key) % HMAP)
+
 datarow create_datarow(cell* cells, int col_count);
 table* create_table();
 void append(table* tab, datarow* row);
@@ -22,5 +25,22 @@ char get_type(char* val);
 
 // sort a file, returns 1
 int sort_file(char* file_path, char* directory_path, char* filename, char* header, char* od);
+
+typedef struct {
+	int hash;
+	int index;
+} property;
+
+void initialize_headers();
+
+bool exists(char* header);
+
+int get_index_nc(char* header);
+
+property* get_header_p(char* header);
+
+void testcols();
+
+
 
 #endif
