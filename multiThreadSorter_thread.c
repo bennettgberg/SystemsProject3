@@ -1,12 +1,13 @@
-#include "multiThreadSorter_thread.h"
+#include "fixcolumns.h"
 
 // implementation
 
+pthread_mutex_t lock;
+int counter;
 
-
-int recursive_scan_and_sort(char* dts, char* header, char* od, pid_t *pids, int *size, int* lock) {
+int recursive_scan_and_sort(char* dts, char* header, char* od) {
 	DIR *dir = opendir(dts);
-	pid_t fpid, dpid; //directory pid and file pid
+	pid_t ftid, dtid; //directory pid and file pid
 	int count = 0;
 	if(dir != NULL) {
 		struct dirent *de;
@@ -37,8 +38,7 @@ int recursive_scan_and_sort(char* dts, char* header, char* od, pid_t *pids, int 
 				}
 				else {
 					printf("%d ", getpid());
-					fflush(stdout);
-					count += recursive_scan_and_sort(new_name, header, od, pids, size, lock);
+					count += recursive_scan_and_sort(new_name, header, od);
 					free(new_name);
 					exit(count);
 				}
@@ -130,19 +130,12 @@ int main(int argc, char* argv[]) {
 		}
 		directory_to_search = current_d;
     	}
-	// create shared memory across processes
-	int size_id, lock_id;
-	size_id = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT | 0666);
-	lock_id = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT | 0666);
-    int *size, *lock;
-	size = (int *)shmat(size_id, 0, 0);
-	lock = (int *)shmat(lock_id, 0, 0);
-	*size = 0;
-	*lock = UNLOCKED;
+	//initialize mutex lock.
+	//run recursive_scan_and_sort.
 	printf("Initial PID: %d\n", getpid());
-	printf("PIDs of all child processes: \n");
-	recursive_scan_and_sort(directory_to_search, header_to_sort, output_directory, NULL, size, lock);
+	printf("TIDs of all spawned threads: ");
+	recursive_scan_and_sort(directory_to_search, header_to_sort, output_directory);
 	
-	printf("\nTotal number of processes: %d\n", *size); //Just size instead of size+1 because main process doesn't count.
+	printf("\nTotal number of threads: %d\n", counter); //Just size instead of size+1 because main process doesn't count.
 	return 0;
 }
