@@ -1,7 +1,7 @@
-all: scannerCSVsort
+all: multiThreadSorter_thread
 
 scannerCSVsort: mergesort.c
-	gcc -g -Wall -Werror -fsanitize=address mergesort.c scannerCSVsorter.c -o scannerCSVsorter
+	gcc -g -Wall -Werror -fsanitize=address mergesort.c fixcolumns.c multiThreadSorter_thread.c -o multiThreadSorter_thread
 	
 clean:
-	rm scannerCSVsorter
+	rm multiThreadSorter_thread
