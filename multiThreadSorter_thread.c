@@ -28,7 +28,7 @@ void * directory_scan(void * tp) {
 	DIR *dir = opendir(directory_to_search);
 	int count = 0;
 	int error;
-	table * result;
+	table * result = (table*)malloc(sizeof(table));;
 	result->size = 0;
 	if(dir != NULL) {
 		struct dirent *de;
@@ -52,7 +52,7 @@ void * directory_scan(void * tp) {
 				}
 				//lock the mutex to print and increment the shared counter.
 				pthread_mutex_lock(&lock); 
-				printf("%d ", tid[counter++]);
+				printf("%ld ", tid[counter++]);
 				//now that we're done with it, unlock.
 				pthread_mutex_unlock(&lock);
 				pthread_join(tid[counter-1], NULL);
@@ -66,11 +66,10 @@ void * directory_scan(void * tp) {
 					return NULL;
 				}
 				pthread_mutex_lock(&lock); 
-				printf("%d ", tid[counter++]);
+				printf("%ld ", tid[counter++]);
 				pthread_mutex_unlock(&lock);
 				pthread_join(tid[counter-1], NULL);
 				free(new_name);	
-				return NULL;
 			} //end this is a file
 		//Now, merge results to result table. Should the merge function free the now-unused memory??
 			table * output_table = ((thread_pointer*)tp)->output;	
@@ -114,8 +113,9 @@ int main(int argc, char* argv[]) {
 		fprintf(stdout, "No header supplied as input.");
 		return 0;
 	}
-	header_ind = get_type(header_to_sort);
-	if(header_ind == 'E') {
+	char header_type = get_type(header_to_sort);
+	header_ind = get_index_nc(header_to_sort);
+	if(header_type == 'E') {
 		fprintf(stderr, "Error: %s is not a valid column header. Did not sort any files.\n", header_to_sort);
 		fprintf(stdout, "Error: %s is not a valid column header. Did not sort any files.\n", header_to_sort);
 		exit(0);
