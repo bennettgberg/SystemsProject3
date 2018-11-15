@@ -90,6 +90,7 @@ int main(int argc, char* argv[]) {
 		fprintf(stdout, "incorrect arguments");
 		return 0;
 	}
+	initialize_headers();
 	int i = 1;
 	char * header_to_sort = NULL;
 	char * output_directory = NULL;
