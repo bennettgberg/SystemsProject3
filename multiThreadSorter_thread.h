@@ -53,6 +53,11 @@ typedef struct {
         int max_size;
 } table;
 
+typedef struct {
+	char ** input;
+	table * output;
+} thread_pointer;
+
 // mergesort
 int compare(datarow A, datarow B, int index);
 

@@ -4,40 +4,47 @@
 
 pthread_mutex_t lock;
 int counter;
-char * header_to_sort, output_directory;
+char * output_directory;
+int header_ind;     //index of the header to sort on.
 pthread_t tid[256];
 
-void * file_sort(void * file_to_sort) {
-	char * fname = (char*)file_to_sort;
-	if( strlen(fname) >= 4 && 
+void * file_sort(void * tp) {
+	char * fname = (*((thread_pointer*)tp))->input;
+	table * file_table = NULL;
+	name_len = strlen(fname);
+	if( name_len >= 4 && 
 	fname[name_len - 1] == 'v' && 
 	fname[name_len - 2] == 's' && 
 	fname[name_len - 3] == 'c' &&
 	fname[name_len - 4] == '.'){
-	//separate directory_to_search and filename***********
-		sort_file(fname, dts, filename, header_to_sort, output_directory);
+	//sort the file, get an array 
+		*file_table = sort_file(fname, header_ind);
 	} //end file is .csv
-	return NULL;
+	((thread_pointer*)tp)->output = file_table;
+	return (void*)tp;
 }
 
 void * directory_scan(void * directory_to_search) {
 	DIR *dir = opendir((char*)directory_to_search);
 	int count = 0;
 	int error;
+	table result;
 	if(dir != NULL) {
 		struct dirent *de;
 		de = readdir(dir); // skip .
 		de = readdir(dir); // skip ..
 		while((de = readdir(dir)) != NULL) {
 			int name_len = strlen(de->d_name);
-			int dir_len = strlen(dts);
+			int dir_len = strlen(directory_to_search);
 			char* new_name = (char*)malloc(dir_len + name_len + 2);
-			if(dts[dir_len - 1] == '/') {
-				dts[dir_len - 1] = '\0';
+			if(directory_to_search[dir_len - 1] == '/') {
+				directory_to_search[dir_len - 1] = '\0';
 			}
-			sprintf(new_name, "%s/%s", dts, de->d_name);
+			sprintf(new_name, "%s/%s", directory_to_search, de->d_name);
+			thread_pointer * tp = (thread_pointer*)malloc(sizeof(thread_pointer));
+			tp->input = &new_name;
 			if(de->d_type & DT_DIR) {
-				error = pthread_create(&tid[counter], NULL, directory_scan, (void *)new_name);
+				error = pthread_create(&tid[counter], NULL, directory_scan, (void *)tp);
 				if(error != 0){
 					fprintf(stderr, "Error: could not create thread for directory %s: error %d", new_name, error);
 					return NULL;
@@ -47,10 +54,12 @@ void * directory_scan(void * directory_to_search) {
 				printf("%d ", tid[counter++]);
 				//now that we're done with it, unlock.
 				pthread_mutex_unlock(&lock);
+				pthread_join(tid[counter-1], NULL);
+				
 				free(new_name);
 			}
 			else { //de is actually a file.
-				error = pthread_create(&tid[counter], NULL, file_sort, (void *)new_name);
+				error = pthread_create(&tid[counter], NULL, file_sort, (void *)tp);
 				if(error != 0){
 					fprintf(stderr, "Error: could not create thread for directory %s: error %d", new_name, error);
 					return NULL;
@@ -58,12 +67,12 @@ void * directory_scan(void * directory_to_search) {
 				pthread_mutex_lock(&lock); 
 				printf("%d ", tid[counter++]);
 				pthread_mutex_unlock(&lock);
-				pthread_join(tid[counter], NULL);
-				free(new_name);
+				pthread_join(tid[counter-1], NULL);
+				free(new_name);	
 				return NULL;
 			} //end this is a file
-		} //end while readdir not null
-		
+		//Now, merge results to result table. 
+		} //end while readdir not null	
 		closedir(dir);
 	} //end if dir not null
 	return NULL;
@@ -76,7 +85,7 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 	int i = 1;
-	header_to_sort = NULL;
+	char * header_to_sort = NULL;
 	output_directory = NULL;
 	char *directory_to_search = NULL;
 	for(i = 1; i < argc; i++) {
@@ -98,7 +107,8 @@ int main(int argc, char* argv[]) {
 		fprintf(stdout, "No header supplied as input.");
 		return 0;
 	}
-	if(get_type(header_to_sort) == 'E') {
+	header_ind = get_type(header_to_sort);
+	if(header_ind == 'E') {
 		fprintf(stderr, "Error: %s is not a valid column header. Did not sort any files.\n", header_to_sort);
 		fprintf(stdout, "Error: %s is not a valid column header. Did not sort any files.\n", header_to_sort);
 		exit(0);
