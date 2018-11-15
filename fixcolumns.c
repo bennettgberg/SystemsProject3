@@ -292,16 +292,10 @@ void initialize_headers() {
 		h_headers[i].index = -1;
 	}
     for(i = 0; i < 28; i++) {
-        printf(g_headers[i]);
         int hsh = hash(g_headers[i]);
         int index = hmap(hsh);
-        printf(":%d\n", index);
-        if(h_headers[index].index != -1)
-                printf("duplicate!-----------------\n");
-        else {
-            h_headers[index].hash = hsh;
-            h_headers[index].index = i;
-        }
+        h_headers[index].hash = hsh;
+        h_headers[index].index = i;
     }
 }
 
