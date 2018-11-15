@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include "fixcolumns.h"
 
 
 // define data types
@@ -54,23 +55,6 @@ typedef struct {
         int max_size;
 } table;
 
-datarow create_datarow(cell* cells, int col_count);
-table* create_table();
-void append(table* tab, datarow* row);
-
-
-// string processing
-char** split_by_comma(char* line, int* len);
-
-cell* get_cells(char** pre_cell, char data_type, int index, int len);
-
-void print_header(char** vals, int n, FILE* stream);
-
-// post processing
-void print_row(datarow* row, FILE* stream);
-
-char get_type(char* val);
-
 // mergesort
 int compare(datarow A, datarow B, int index);
 
@@ -82,9 +66,6 @@ datarow * mergesort(datarow * data, int index, int nrows );
 
 // recursive scanner sort, returns with number of forks created
 int recursive_scan_and_sort(char* dts, char* header, char* od, pid_t *pids, int* size, int* lock);
-
-// sort a file, returns 1
-int sort_file(char* file_path, char* directory_path, char* filename, char* header, char* od);
 
 //
 unsigned long hash(unsigned char *str);
