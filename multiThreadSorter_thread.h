@@ -86,5 +86,6 @@ int recursive_scan_and_sort(char* dts, char* header, char* od, pid_t *pids, int*
 // sort a file, returns 1
 int sort_file(char* file_path, char* directory_path, char* filename, char* header, char* od);
 
-
+//
+unsigned long hash(unsigned char *str);
 #endif
