@@ -206,7 +206,7 @@ cell* get_cells(char** pre_cell, char data_type, int index, int len, char** head
 
 table* sort_file(char* file_path, int cell_index) {
 	FILE* fp = fopen(file_path, "r");
-	char sort_type = h_types[index];
+	char sort_type = h_types[cell_index];
 	char buff[BUFSIZ];
 	char *read = fgets(buff, sizeof buff, fp);
 	int no_of_cols = 0;
@@ -214,7 +214,7 @@ table* sort_file(char* file_path, int cell_index) {
 	int i;
     for(i = 0; i < no_of_cols; i++) {
         if(exists(headers[i]) == false) {
-            fprintf(stderr, "Could not sort file %s: incorrect format", filename);
+            fprintf(stderr, "Could not sort file %s: incorrect format", file_path);
 			exit(0);
         }
     }
@@ -225,7 +225,7 @@ table* sort_file(char* file_path, int cell_index) {
         int nc = 0;
         char** split_line = split_by_comma(buff, &nc);
         if(nc != no_of_cols) {
-            fprintf(stderr, "Could not sort file %s: incorrect format", filename);
+            fprintf(stderr, "Could not sort file %s: incorrect format", file_path);
             exit(0);
         }
         cell* cells = get_cells(split_line, sort_type, cell_index, nc, headers);
