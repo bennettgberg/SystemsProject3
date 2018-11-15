@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "scannerCSVsorter.h"
+#include "multiThreadSorter_thread.h"
 
 //return > 0 if A is larger, < 0 if B is larger, 0 if A = B.
 int compare(datarow A, datarow B, int index){
