@@ -164,10 +164,14 @@ char** split_by_comma(char* line, int* len) {
 }
 
 
-cell* get_cells(char** pre_cell, char data_type, int index, int len) {
-	int i = 0;
-	cell* cells = (cell*)malloc(len * sizeof(cell));
-	for(i = 0; i < len; i++) {
+cell* get_cells(char** pre_cell, char data_type, int index, int len, char** headers) {
+	int k = 0, i = 0;
+	cell* cells = (cell*)malloc(NUMHEADERS * sizeof(cell));
+    for(k = 0 ; k < NUMHEADERS; k++) {
+        cells[k].is_empty = true;
+    }
+	for(k = 0; k < len; k++) {
+        i = get_header_p(headers[k])->index;
 		cells[i].original = pre_cell[i];
 		cells[i].is_empty = pre_cell[i][0] == '\0' ? true : false;
 		if(cells[i].is_empty) {
@@ -203,6 +207,10 @@ cell* get_cells(char** pre_cell, char data_type, int index, int len) {
 int sort_file(char* file_path, char* dts, char* filename, char* header_to_sort, char* od) {
 	FILE* fp = fopen(file_path, "r");
 	char sort_type = get_type(header_to_sort);
+    if(sort_type == 'E') {
+        fprintf(stderr, "Could not sort file %s: %s is not a valid header", filename, header_to_sort);
+        exit(0);
+    }
 	char buff[BUFSIZ];
 	char *read = fgets(buff, sizeof buff, fp);
 	int no_of_cols = 0;
@@ -218,61 +226,51 @@ int sort_file(char* file_path, char* dts, char* filename, char* header_to_sort, 
 			exit(0);
         }
     }
-	for(i = 0; i < no_of_cols; i++) {
-		if(!strcmp(headers[i], header_to_sort)) {
-			cell_index = i;
-			break;
-		}
-	}
-	if(cell_index != -1) {
-		table* main_table = create_table();
-		main_table->header = headers;
-		read = fgets(buff, sizeof buff, fp);
-		while(read != NULL) {
-			int nc = 0;
-			char** split_line = split_by_comma(buff, &nc);
-			if(nc != no_of_cols) {
-				fprintf(stderr, "Could not sort file %s: incorrect format", filename);
-				exit(0);
-			}
-			cell* cells = get_cells(split_line, sort_type, cell_index, nc);
-			datarow row = create_datarow(cells, nc);
-			append(main_table, &row); 
-			read = fgets(buff, sizeof buff, fp);
-		}
-		datarow* sorted = mergesort(main_table->rows, cell_index, main_table->size);
-		FILE* fout;
-		if(od==NULL) { // od is null means that there is no specified output directory
-			char* new_name = (char*)malloc(strlen(file_path) + strlen(header_to_sort) + 10);
-			sprintf(new_name, "%s/%s-sorted-%s", dts, header_to_sort, filename);
-			if((fout=fopen(new_name, "w"))==NULL) {
-				perror("Cannot open file.\n");
-				exit(0);
-			}
-		}
-		else { // od is specified already.                                    
-			char* new_name = (char*)malloc(strlen(od) + strlen(header_to_sort) + 10);
-			if(od[strlen(od)-1] != '/')
-				sprintf(new_name, "%s/%s-sorted-%s", od, header_to_sort, filename);
-			else
-				sprintf(new_name, "%s%s-sorted-%s", od, header_to_sort, filename);
-				
-			if((fout=fopen(new_name, "w"))==NULL) {
-				perror("Cannot open file.\n");
-				exit(0);
-			}
-		}
-		print_header(headers, no_of_cols, fout);
-		int j;
-		for(j = 0; j < main_table->size; ++j){
-			print_row(&(sorted[j]), fout);
-		}
-		fclose(fout);
-	}
-	else {
-		fprintf(stderr, "Column %s does not exist in file %s", header_to_sort, file_path);
-		exit(0);
-	}
+	cell_index = get_header_p(header_to_sort)->index;
+    table* main_table = create_table();
+    main_table->header = g_headers;
+    read = fgets(buff, sizeof buff, fp);
+    while(read != NULL) {
+        int nc = 0;
+        char** split_line = split_by_comma(buff, &nc);
+        if(nc != no_of_cols) {
+            fprintf(stderr, "Could not sort file %s: incorrect format", filename);
+            exit(0);
+        }
+        cell* cells = get_cells(split_line, sort_type, cell_index, nc, headers);
+        datarow row = create_datarow(cells, nc);
+        append(main_table, &row); 
+        read = fgets(buff, sizeof buff, fp);
+    }
+    datarow* sorted = mergesort(main_table->rows, cell_index, main_table->size);
+    FILE* fout;
+    if(od==NULL) { // od is null means that there is no specified output directory
+        char* new_name = (char*)malloc(strlen(file_path) + strlen(header_to_sort) + 10);
+        sprintf(new_name, "%s/%s-sorted-%s", dts, header_to_sort, filename);
+        if((fout=fopen(new_name, "w"))==NULL) {
+            perror("Cannot open file.\n");
+            exit(0);
+        }
+    }
+    else { // od is specified already.                                    
+        char* new_name = (char*)malloc(strlen(od) + strlen(header_to_sort) + 10);
+        if(od[strlen(od)-1] != '/')
+            sprintf(new_name, "%s/%s-sorted-%s", od, header_to_sort, filename);
+        else
+            sprintf(new_name, "%s%s-sorted-%s", od, header_to_sort, filename);
+            
+        if((fout=fopen(new_name, "w"))==NULL) {
+            perror("Cannot open file.\n");
+            exit(0);
+        }
+    }
+    print_header(headers, no_of_cols, fout);
+    int j;
+    for(j = 0; j < main_table->size; ++j){
+        print_row(&(sorted[j]), fout);
+    }
+    fclose(fout);
+	
 	fclose(fp);
 	return 1;
 }
