@@ -291,7 +291,7 @@ void initialize_headers() {
 	for(i = 0; i < HMAP; i++) {
 		h_headers[i].index = -1;
 	}
-    for(i = 0; i < 28; i++) {
+    for(i = 0; i < NUMHEADERS; i++) {
         int hsh = hash(g_headers[i]);
         int index = hmap(hsh);
         h_headers[index].hash = hsh;
