@@ -1,0 +1,43 @@
+scannerCSVsorter
+
+Usage: ./scannerCSVsorter -c column_to_sort [-d directory_to_search] [-o output_directory]
+	[-d and -o are optional: default directory_to_search is . and default output_directory is same directory as source file]
+
+This program recursively searches a directory and its subdirectories, sorting every valid CSV file it finds based on the value in the column named column_to_sort.
+The final sorted file will be named column_to_sort-sorted-original_name , where original_name must end in .csv . 
+Only a column with a legal movie value type will be sorted on. 
+
+Input: column_to_sort (string), optional path/to/directory/to/search (string) and optional path/to/output/directory (string)
+Output: List of PIDs of all processes forked in the process of the recursion and sorting, and the total number of processes that were run (excluding main process 
+	because its existence is obvious).
+
+Data Structures:
+    cell: contains the original data and converted data at a certain cell in the table (between commas in a single row of the csv file)
+	datarow: contains a row of cells and the number of cells (to store the data from a full row of the csv file)
+	table: contains an array of rows (to store the data of the entire csv file).
+
+Process:
+    1. Search Directory using recursive_scan_and_sort()
+    2. If File, fork(), then (only if .csv file) sort_file()
+    3. If directory, fork() and go to 1
+    4. Output all PIDs
+
+Search directory: recursive_scan_and_sort() in scannerCSVsorter.c
+    Use opendir() and readdir() to read the contents of directory
+    Skips . and .. to avoid recursive loops and fork() bombs
+    When it encounters a file, it calls fork(), adds the PID to the shared memory array and calls sort_file()
+    When it encounters a folder, it calls fork(), adds the PIDS to the shared memory array and calls recursive_scan_and_sort()
+
+Sort file: sort_file() in scannerCSVsorter.c
+    Uses the code from Asst0 with some slight changes to use a file buffer instead of an STDIN buffer. The mergesort algorithm is identical to the one in Asst0.
+
+Testing:
+    We created a folder with nested folders 4 levels deep with multiple copies of movie_metadata.csv, and had our scannerCSVsorter program sort the files 
+	with various starting directories, output directories, and headers to sort on.
+
+More Info:
+    We used shared memory to improve the efficiency of the program, and to avoid the possibility of different processes trying to print to stdout at the same time. 
+    For fatal errors, the error message was output to both STDOUT and STDERR so that there would be no ambiguity for the user as to why the program crashed 
+	(as Professor Francisco suggested in class).
+    If a file is encountered whose name starts with "[name_of_header]-sorted-", where [name_of_header] is the header being sorted on, a new file is not created
+	because we assume that the file is already sorted by the desired header. 
