@@ -229,7 +229,7 @@ table* sort_file(char* file_path, int cell_index) {
             exit(0);
         }
         cell* cells = get_cells(split_line, sort_type, cell_index, nc, headers);
-        datarow row = create_datarow(cells, nc);
+        datarow row = create_datarow(cells, NUMHEADERS);
         append(main_table, &row); 
         read = fgets(buff, sizeof buff, fp);
     }
