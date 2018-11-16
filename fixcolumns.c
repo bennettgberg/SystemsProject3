@@ -172,8 +172,8 @@ cell* get_cells(char** pre_cell, char data_type, int index, int len, char** head
     }
 	for(k = 0; k < len; k++) {
         i = get_header_p(headers[k])->index;
-		cells[i].original = pre_cell[i];
-		cells[i].is_empty = pre_cell[i][0] == '\0' ? true : false;
+		cells[i].original = pre_cell[k];
+		cells[i].is_empty = pre_cell[k][0] == '\0' ? true : false;
 		if(cells[i].is_empty) {
 			cells[i].str_len = 0;
 		}
@@ -181,17 +181,17 @@ cell* get_cells(char** pre_cell, char data_type, int index, int len, char** head
 			cells[i].data_type = data_type;
 			int st = 0;
 			int end = 0;
-			while(pre_cell[i][st] == ' ' || pre_cell[i][st] == '\t' || pre_cell[i][st] == '"') st++;
-			while(pre_cell[i][end] != '\0') end++;
+			while(pre_cell[k][st] == ' ' || pre_cell[k][st] == '\t' || pre_cell[k][st] == '"') st++;
+			while(pre_cell[k][end] != '\0') end++;
 			end--;
-			while(end > -1 && (pre_cell[i][end] == ' ' || pre_cell[i][end] == '\t' || pre_cell[i][end] == '"')) end--;
+			while(end > -1 && (pre_cell[k][end] == ' ' || pre_cell[k][end] == '\t' || pre_cell[k][end] == '"')) end--;
 			if(end <= st) cells[i].is_empty = true;
 			else {
 				cells[i].is_empty = false;
 				int j = 0;
 				cells[i].str_datum = (char*)malloc((end - st + 2) * sizeof(char));
 				for(j = st; j <= end; j++)
-					cells[i].str_datum[j - st] = pre_cell[i][j];
+					cells[i].str_datum[j - st] = pre_cell[k][j];
 				cells[i].str_datum[j - st] = '\0';
 				cells[i].str_len = end - st + 1;
 				if(data_type == INT)
