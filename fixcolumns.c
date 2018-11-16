@@ -169,6 +169,7 @@ cell* get_cells(char** pre_cell, char data_type, int index, int len, char** head
 	cell* cells = (cell*)malloc(NUMHEADERS * sizeof(cell));
     for(k = 0 ; k < NUMHEADERS; k++) {
         cells[k].is_empty = true;
+		cells[k].original = "";
     }
 	for(k = 0; k < len; k++) {
         i = get_header_p(headers[k])->index;
