@@ -14,7 +14,7 @@ void append(table* tab, datarow* row);
 // string processing
 char** split_by_comma(char* line, int* len);
 
-cell* get_cells(char** pre_cell, char data_type, int index, int len, char** headers);
+cell* get_cells(char** pre_cell, char data_type, int index, int len, char** headers, int* indices);
 
 void print_header(FILE* stream);
 

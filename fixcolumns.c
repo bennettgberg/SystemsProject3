@@ -164,7 +164,7 @@ char** split_by_comma(char* line, int* len) {
 }
 
 
-cell* get_cells(char** pre_cell, char data_type, int index, int len, char** headers) {
+cell* get_cells(char** pre_cell, char data_type, int index, int len, char** headers, int* indices) {
 	int k = 0, i = 0;
 	cell* cells = (cell*)malloc(NUMHEADERS * sizeof(cell));
     for(k = 0 ; k < NUMHEADERS; k++) {
@@ -172,7 +172,7 @@ cell* get_cells(char** pre_cell, char data_type, int index, int len, char** head
 		cells[k].original = "";
     }
 	for(k = 0; k < len; k++) {
-        i = get_header_p(headers[k])->index;
+        i = indices[k];
 		cells[i].original = pre_cell[k];
 		cells[i].is_empty = pre_cell[k][0] == '\0' ? true : false;
 		if(cells[i].is_empty) {
@@ -212,12 +212,16 @@ table* sort_file(char* file_path, int cell_index) {
 	char *read = fgets(buff, sizeof buff, fp);
 	int no_of_cols = 0;
 	char** headers = split_by_comma(buff, &no_of_cols);
+	int *indices = (int*)malloc(no_of_cols * sizeof(int));
 	int i;
     for(i = 0; i < no_of_cols; i++) {
         if(exists(headers[i]) == false) {
             fprintf(stderr, "Could not sort file %s: incorrect format", file_path);
 			exit(0);
         }
+		else {
+			indices[i] = get_header_p(headers[k])->index;
+		}
     }
     table* main_table = create_table();
     main_table->header = g_headers;
@@ -229,7 +233,7 @@ table* sort_file(char* file_path, int cell_index) {
             fprintf(stderr, "Could not sort file %s: incorrect format", file_path);
             exit(0);
         }
-        cell* cells = get_cells(split_line, sort_type, cell_index, nc, headers);
+        cell* cells = get_cells(split_line, sort_type, cell_index, nc, headers, indices);
         datarow row = create_datarow(cells, NUMHEADERS);
         append(main_table, &row); 
         read = fgets(buff, sizeof buff, fp);
