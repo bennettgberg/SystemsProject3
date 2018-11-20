@@ -81,6 +81,6 @@ unsigned long hash(unsigned char *str);
 pthread_mutex_t lock;
 int counter;
 int header_ind;     //index of the header to sort on.
-pthread_t tid[256];
+pthread_t tid[500];
 
 #endif
