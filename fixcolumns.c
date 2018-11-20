@@ -114,11 +114,7 @@ void append(table* tab, datarow* row) {
 	else {
 		datarow* temp = tab->rows;
 		tab->max_size *= 2;
-		tab->rows = (datarow*)malloc(tab->max_size * sizeof(datarow));
-		int i = 0;
-		for(i = 0; i < tab->size; i++)
-			tab->rows[i] = temp[i];
-		free(temp);
+		tab->rows = (datarow*)realloc(temp, tab->max_size * sizeof(datarow));
 		append(tab, row);
 	}
 }
