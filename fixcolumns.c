@@ -220,7 +220,7 @@ table* sort_file(char* file_path, int cell_index) {
 			exit(0);
         }
 		else {
-			indices[i] = get_header_p(headers[k])->index;
+			indices[i] = get_header_p(headers[i])->index;
 		}
     }
     table* main_table = create_table();
