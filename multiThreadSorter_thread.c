@@ -52,7 +52,7 @@ void * directory_scan(void * tp) {
 				}
 				//lock the mutex to print and increment the shared counter.
 				pthread_mutex_lock(&lock); 
-				printf("%ld ", tid[counter++]);
+				printf("%d ", counter++);
 				//now that we're done with it, unlock.
 				pthread_mutex_unlock(&lock);
 				pthread_join(tid[counter-1], NULL);
@@ -66,9 +66,11 @@ void * directory_scan(void * tp) {
 					return NULL;
 				}
 				pthread_mutex_lock(&lock); 
-				printf("%ld ", tid[counter++]);
+				printf("%d ", counter++);
 				pthread_mutex_unlock(&lock);
 				pthread_join(tid[counter-1], NULL);
+				//printf("Initial PID: %d\n", getpid());
+				//printf("TIDs of all spawned threads: ");
 				free(new_name);	
 			} //end this is a file
 		//Now, merge results to result table. Should the merge function free the now-unused memory??
@@ -144,7 +146,8 @@ int main(int argc, char* argv[]) {
     	}
 	//initialize mutex lock.
 	//run recursive_scan_and_sort.
-	printf("Initial PID: %d\n", getpid());
+	pid0 = getpid();
+	printf("Initial PID: %d\n", pid0);
 	printf("TIDs of all spawned threads: ");
 	int mut = pthread_mutex_init(&lock, NULL); 
 	if (mut != 0) { 

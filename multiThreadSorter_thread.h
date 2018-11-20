@@ -57,6 +57,7 @@ typedef struct {
 typedef struct {
 	char ** input;
 	table * output;
+//	int ** children;
 } thread_pointer;
 
 // mergesort
@@ -82,5 +83,6 @@ pthread_mutex_t lock;
 int counter;
 int header_ind;     //index of the header to sort on.
 pthread_t tid[500];
+int pid0;
 
 #endif
