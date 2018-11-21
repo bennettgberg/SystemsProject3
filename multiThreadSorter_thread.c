@@ -2,10 +2,10 @@
 
 // implementation
 
-
-void * file_sort(void * tp) {
-	thread_pointer* my_tp = (thread_pointer*)tp;
+void * file_sort(void * tp_in) {
+	thread_pointer* my_tp = (thread_pointer*)tp_in;
 	char ** input = my_tp->input;
+	thread_pointer* tp_out = (thread_pointer*)malloc(sizeof(thread_pointer));
 	char * fname = *input;
 	table * file_table = NULL;
 	int name_len = strlen(fname);
@@ -17,72 +17,108 @@ void * file_sort(void * tp) {
 	//sort the file, get an array 
 		file_table = sort_file(fname, header_ind);
 	} //end file is .csv
-	my_tp->output = file_table;
-	return tp;
+	pthread_mutex_lock(&lock); 
+	printf("Initial PID: %d\n", pid0);
+	printf("TIDs of all spawned threads: ");
+	printf("\nTotal number of threads: 0\n");
+	pthread_mutex_unlock(&lock);
+	tp_out->output = file_table;
+	tp_out->children = (int*)malloc(sizeof(int*));
+	tp_out->tot_count = 0;
+	return tp_out;
 }
 
-void * directory_scan(void * tp) {
-	thread_pointer *my_tp = (thread_pointer*)tp;
+void * directory_scan(void * tp_in) {
+	thread_pointer *my_tp = (thread_pointer*)tp_in;
 	char ** input = my_tp->input;
+	thread_pointer *tp_out = (thread_pointer*)malloc(sizeof(thread_pointer)); //output thread_pointer
 	char* directory_to_search = *input; 
 	DIR *dir = opendir(directory_to_search);
 	int count = 0;
 	int error;
-	table * result = (table*)malloc(sizeof(table));;
+	table * result = (table*)malloc(sizeof(table));
 	result->size = 0;
+	int * children = (int*)malloc(250*sizeof(int)); //array of child/grandchild thread IDs
+	pthread_t * chilin = (pthread_t*)malloc(250*sizeof(pthread_t));
+	int my_count = 0; //count of how many threads I've spawned
+	thread_pointer ** tps = (thread_pointer**)malloc(250*sizeof(thread_pointer*)); //array of thread_pointers to be used as input/output for all new threads
+	tp_out->tot_count = 0;
+	char** new_names = (char**)malloc(250*sizeof(char*));
 	if(dir != NULL) {
 		struct dirent *de;
 		de = readdir(dir); // skip .
 		de = readdir(dir); // skip ..
 		while((de = readdir(dir)) != NULL) {
 			int name_len = strlen(de->d_name);
+			if(name_len == 0){ //if no files left in this directory
+				break;
+			}
 			int dir_len = strlen(directory_to_search);
-			char* new_name = (char*)malloc(dir_len + name_len + 2);
+			new_names[my_count] = (char*)malloc(dir_len + name_len + 2);
 			if(directory_to_search[dir_len - 1] == '/') {
 				directory_to_search[dir_len - 1] = '\0';
 			}
-			sprintf(new_name, "%s/%s", directory_to_search, de->d_name);
-			thread_pointer * tp = (thread_pointer*)malloc(sizeof(thread_pointer));
-			tp->input = &new_name;
+			sprintf(new_names[my_count], "%s/%s", directory_to_search, de->d_name);
+			tps[my_count] = (thread_pointer*)malloc(sizeof(thread_pointer));
+			tps[my_count]->input = &new_names[my_count];
+		//lock mutex to access counter. 
+			pthread_mutex_lock(&lock1); 
+			pthread_t * tidctr = &tid[counter];
+			pthread_mutex_unlock(&lock1);
 			if(de->d_type & DT_DIR) {
-				error = pthread_create(&tid[counter], NULL, directory_scan, (void *)tp);
+				error = pthread_create(tidctr, NULL, directory_scan, (void *)tps[my_count]);
 				if(error != 0){
-					fprintf(stderr, "Error: could not create thread for directory %s: error %d", new_name, error);
-					return NULL;
+					fprintf(stderr, "Error: could not create thread for directory %s: error %d", new_names[my_count], error);
+					return tp_out;
 				}
-				//lock the mutex to print and increment the shared counter.
-				pthread_mutex_lock(&lock); 
-				printf("%d ", counter++);
-				//now that we're done with it, unlock.
-				pthread_mutex_unlock(&lock);
-				pthread_join(tid[counter-1], NULL);
-				
-				free(new_name);
-			}
+			} //end de is a directory
 			else { //de is actually a file.
-				error = pthread_create(&tid[counter], NULL, file_sort, (void *)tp);
+				error = pthread_create(tidctr, NULL, file_sort, (void *)tps[my_count]);
 				if(error != 0){
-					fprintf(stderr, "Error: could not create thread for directory %s: error %d", new_name, error);
-					return NULL;
+					fprintf(stderr, "Error: could not create thread for file %s: error %d", new_names[my_count], error);
+					return tp_out;
 				}
-				pthread_mutex_lock(&lock); 
-				printf("%d ", counter++);
-				pthread_mutex_unlock(&lock);
-				pthread_join(tid[counter-1], NULL);
-				//printf("Initial PID: %d\n", getpid());
-				//printf("TIDs of all spawned threads: ");
-				free(new_name);	
 			} //end this is a file
-		//Now, merge results to result table. Should the merge function free the now-unused memory??
-			table * output_table = ((thread_pointer*)tp)->output;	
-			int new_size = result->size + output_table->size;
-			result->rows = merge(result->rows, result->size, output_table->rows, output_table->size, header_ind);
-			result->size = new_size;
+			pthread_mutex_lock(&lock1); 
+			children[my_count] = counter; //save ID (integer) to print later
+			chilin[my_count++] = tid[counter++]; //save TID so we can join later
+			pthread_mutex_unlock(&lock1);
+			tp_out->tot_count++; 
 		} //end while readdir not null	
 		closedir(dir);
 	} //end if dir not null
-	my_tp->output = result;	
-	return tp;
+	table * my_output;	
+	int new_size;
+	thread_pointer * tp;
+	int i;
+	for(i = 0; i < my_count; ++i){
+		pthread_join(chilin[i], NULL);
+		tp = (thread_pointer*)tps[i];
+		//Now, merge results to result table. Should the merge function free the now-unused memory??
+		my_output = tp->output;
+		if(my_output) {
+			new_size = result->size + my_output->size;
+			result->rows = merge(result->rows, result->size, my_output->rows, my_output->size, header_ind);
+			result->size = new_size;
+		}
+		//add IDs of children to my list.
+		if(tp->tot_count > 0) {
+			memcpy(&tp_out->children[tp_out->tot_count], &tp->children, tp->tot_count*sizeof(int));
+		}
+		tp_out->tot_count += tp->tot_count;
+		//free memory?
+	}
+	tp_out->output = result;	
+	tp_out->children = children;
+	pthread_mutex_lock(&lock); 
+	printf("Initial PID: %d\n", pid0);
+	printf("TIDs of all spawned threads: ");
+	for(i = 0; i < tp_out->tot_count; ++i){
+		printf("%d, ", tp_out->children[i]);
+	}
+	printf("\nTotal number of threads: %d\n", tp_out->tot_count);
+	pthread_mutex_unlock(&lock);
+	return tp_out;
 }
 
 int main(int argc, char* argv[]) {
@@ -147,9 +183,8 @@ int main(int argc, char* argv[]) {
 	//initialize mutex lock.
 	//run recursive_scan_and_sort.
 	pid0 = getpid();
-	printf("Initial PID: %d\n", pid0);
-	printf("TIDs of all spawned threads: ");
 	int mut = pthread_mutex_init(&lock, NULL); 
+	int mut1 = pthread_mutex_init(&lock1, NULL); 
 	if (mut != 0) { 
 		fprintf(stdout, "Error: mutex initialization failed: %d\n", mut); 
 		fprintf(stderr, "Error: mutex initialization failed: %d\n", mut); 
@@ -157,7 +192,10 @@ int main(int argc, char* argv[]) {
 	} 
 	thread_pointer * tp = (thread_pointer*)malloc(sizeof(thread_pointer));
 	tp->input = &directory_to_search;
+
+//Call directory_scan to start recursion!
 	void * all_data_void = directory_scan((void*)tp);
+
 	thread_pointer * my_tp = (thread_pointer*)all_data_void;
 	table * all_data = my_tp->output;
 	char * od = output_directory;
@@ -191,6 +229,12 @@ int main(int argc, char* argv[]) {
 	fclose(fout);
 	//destroy mutex lock now that we're done with it.
 	pthread_mutex_destroy(&lock);
-	printf("\nTotal number of threads: %d\n", counter); //Just size instead of size+1 because main process doesn't count.
+	pthread_mutex_destroy(&lock1);
+//	printf("Initial PID: %d\n", pid0); //already print this in first directory_scan call!
+//	printf("TIDs of all spawned threads: ");
+//	for(i = 0; i < counter; ++i) {
+//		printf("%d, ", my_tp->children[i]);
+//	}
+//	printf("\nTotal number of threads: %d\n", counter); 
 	return 0;
 }

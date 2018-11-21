@@ -57,7 +57,8 @@ typedef struct {
 typedef struct {
 	char ** input;
 	table * output;
-//	int ** children;
+	int * children;
+	int tot_count;
 } thread_pointer;
 
 // mergesort
@@ -80,6 +81,7 @@ unsigned long hash(unsigned char *str);
 
 //Global variables
 pthread_mutex_t lock;
+pthread_mutex_t lock1; //one for incrementing counter, one for printing.
 int counter;
 int header_ind;     //index of the header to sort on.
 pthread_t tid[500];
