@@ -139,10 +139,20 @@ int main(int argc, char* argv[]) {
 		} 
         else if(strcmp(argv[i], "-d") == 0) {
 			i++;
+			if(directory_to_search != NULL) {
+				perror("incorrect arguments, cannot have more than one -d");
+				fprintf(stdout, "incorrect arguments, cannot have more than one -d");
+				return 0;
+			}
 			directory_to_search = argv[i];
 		}
         else if(strcmp(argv[i], "-o") == 0) {
 			i++;
+			if(output_directory != NULL) {
+				perror("incorrect arguments, cannot have more than one -o");
+				fprintf(stdout, "incorrect arguments, cannot have more than one -o");
+				return 0;
+			}
 			output_directory = argv[i];
 		}  
 	}
