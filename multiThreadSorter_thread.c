@@ -38,12 +38,12 @@ void * directory_scan(void * tp_in) {
 	int error;
 	table * result = (table*)malloc(sizeof(table));
 	result->size = 0;
-	int * children = (int*)malloc(500*sizeof(int)); //array of child/grandchild thread IDs
-	pthread_t * chilin = (pthread_t*)malloc(500*sizeof(pthread_t));
+	int * children = (int*)malloc(1000*sizeof(int)); //array of child/grandchild thread IDs
+	pthread_t * chilin = (pthread_t*)malloc(1000*sizeof(pthread_t));
 	int my_count = 0; //count of how many threads I've spawned
-	thread_pointer ** tps = (thread_pointer**)malloc(500*sizeof(thread_pointer*)); //array of thread_pointers to be used as input/output for all new threads
+	thread_pointer ** tps = (thread_pointer**)malloc(1000*sizeof(thread_pointer*)); //array of thread_pointers to be used as input/output for all new threads
 	tp_out->tot_count = 0;
-	char** new_names = (char**)malloc(500*sizeof(char*));
+	char** new_names = (char**)malloc(1000*sizeof(char*));
 	if(dir != NULL) {
 		struct dirent *de;
 		de = readdir(dir); // skip .

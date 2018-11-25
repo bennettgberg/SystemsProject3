@@ -84,7 +84,7 @@ pthread_mutex_t lock;
 pthread_mutex_t lock1; //one for incrementing counter, one for printing.
 int counter;
 int header_ind;     //index of the header to sort on.
-pthread_t tid[500];
+pthread_t tid[1000];
 int pid0;
 
 #endif
