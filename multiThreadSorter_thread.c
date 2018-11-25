@@ -5,7 +5,7 @@
 void * file_sort(void * tp_in) {
 	thread_pointer* my_tp = (thread_pointer*)tp_in;
 	char ** input = my_tp->input;
-	thread_pointer* tp_out = my_tp;//(thread_pointer*)malloc(sizeof(thread_pointer));
+	thread_pointer* tp_out = my_tp;
 	char * fname = *input;
 	table * file_table = NULL;
 	int name_len = strlen(fname);
@@ -31,7 +31,7 @@ void * file_sort(void * tp_in) {
 void * directory_scan(void * tp_in) {
 	thread_pointer *my_tp = (thread_pointer*)tp_in;
 	char ** input = my_tp->input;
-	thread_pointer *tp_out = my_tp; //(thread_pointer*)malloc(sizeof(thread_pointer)); //output thread_pointer
+	thread_pointer *tp_out = my_tp; //output thread_pointer
 	char* directory_to_search = *input; 
 	DIR *dir = opendir(directory_to_search);
 	int count = 0;
@@ -63,8 +63,6 @@ void * directory_scan(void * tp_in) {
 			tps[my_count]->input = &new_names[my_count];
 		//lock mutex to access counter. 
 			pthread_mutex_lock(&lock1); 
-//			pthread_t * tidctr = &tid[counter];
-		//	pthread_mutex_unlock(&lock1);
 			if(de->d_type & DT_DIR) {
 				error = pthread_create(&tid[counter], NULL, directory_scan, (void *)tps[my_count]);
 				if(error != 0){
@@ -79,12 +77,10 @@ void * directory_scan(void * tp_in) {
 					return tp_out;
 				}
 			} //end this is a file
-			//MAKE SURE THERE IS A FUCKING TID FOR THIS MOTHERFUCKER
+			//Is this loop necessary? Doubtfully.
 			while(0 == 0){
 				if(tid[counter] != 0) break;
-				else printf("FUCKKKKKKKKKKKKKKKKKKKKKKKKKKKKK");
 			}
-		//	pthread_mutex_lock(&lock1); 
 			children[my_count] = counter; //save ID (integer) to print later
 			chilin[my_count++] = tid[counter++]; //save TID so we can join later
 			pthread_mutex_unlock(&lock1);
@@ -95,9 +91,6 @@ void * directory_scan(void * tp_in) {
 	table * my_output;	
 	int new_size;
 	thread_pointer * tp;
-//	pthread_barrier_t b;
-//	pthread_barrier_init(&b, NULL, my_count);
-//	pthread_barrier_wait(&b);
 	int i;
 	for(i = 0; i < my_count; ++i){
 		pthread_join(chilin[i], NULL);
@@ -126,7 +119,6 @@ void * directory_scan(void * tp_in) {
 	}
 	printf("\nTotal number of threads: %d\n", tp_out->tot_count);
 	pthread_mutex_unlock(&lock);
-	//pthread_barrier_destroy(&b);
 	return tp_out;
 }
 
