@@ -106,6 +106,14 @@ table* create_table() {
 	return tab;
 }
 
+table* create_table_dummy() {
+	table* tab = (table*)malloc(sizeof(table));
+	tab->rows = NULL;
+	tab->max_size = 0;
+	tab->size = 0;
+	return tab;
+}
+
 void append(table* tab, datarow* row) {
 	if(tab->size < tab->max_size) {
 		tab->rows[tab->size] = *row;
@@ -213,7 +221,9 @@ table* sort_file(char* file_path, int cell_index) {
     for(i = 0; i < no_of_cols; i++) {
         if(exists(headers[i]) == false) {
             fprintf(stderr, "Could not sort file %s: incorrect format", file_path);
-			exit(0);
+			table* main_table = create_table_dummy();
+			main_table->header = g_headers;
+			return main_table;
         }
 		else {
 			indices[i] = get_header_p(headers[i])->index;
@@ -227,15 +237,19 @@ table* sort_file(char* file_path, int cell_index) {
         char** split_line = split_by_comma(buff, &nc);
         if(nc != no_of_cols) {
             fprintf(stderr, "Could not sort file %s: incorrect format", file_path);
-            exit(0);
+            table* ret_table = create_table_dummy();
+			ret_table->header = g_headers;
+			return ret_table;
         }
         cell* cells = get_cells(split_line, sort_type, cell_index, nc, headers, indices);
         datarow row = create_datarow(cells, NUMHEADERS);
         append(main_table, &row); 
         read = fgets(buff, sizeof buff, fp);
     }
-    datarow* sorted = mergesort(main_table->rows, cell_index, main_table->size);
-	main_table->rows = sorted;
+	if(main_table->size > 0) {
+    	datarow* sorted = mergesort(main_table->rows, cell_index, main_table->size);
+		main_table->rows = sorted;
+	}
 
 	fclose(fp);
 	return main_table;

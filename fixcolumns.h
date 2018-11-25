@@ -8,6 +8,7 @@
 
 datarow create_datarow(cell* cells, int col_count);
 table* create_table();
+table* create_table_dummy();
 void append(table* tab, datarow* row);
 
 
