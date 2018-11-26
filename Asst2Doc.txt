@@ -34,8 +34,11 @@ Sort file: sort_file() in fixcolumns.c
       used in Asst0 and Asst1 (with some minor efficiency improvements).
 
 Testing:
-    We created a folder with nested folders 4 levels deep with multiple copies of movie_metadata.csv, and had our multiThreadSorter_thread program sort the files 
-	with various starting directories, output directories, and headers to sort on.
+    We created test cases with multiple scenarios:
+        1. A folder with nested folders 4 levels deep with multiple copies of movie_metadata.csv
+        2. A case where we sort by a missing column
+        3. A case where the file has mispelled header
+        4. A case where the file has headers but no rows
 
 More Info:
     We used a new structure pointer called "thread_pointer" to be the input and output of the multi-threaded functions (file_sort() and directory_scan()). This allowed
@@ -43,3 +46,6 @@ More Info:
 	allowed to be used as input and output. 
     For fatal errors, the error message was output to both STDOUT and STDERR so that there would be no ambiguity for the user as to why the program crashed 
 	(as Professor Francisco suggested in class).
+
+    We also used pseudo-hashing for quick lookup for headers. We used djb2 hashing function from here: http://www.cse.yorku.ca/~oz/hash.html
+    We didn't have to resolve for collision because we used an array with size 132 that resulted in unique mappings.
