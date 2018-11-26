@@ -49,3 +49,9 @@ More Info:
 
     We also used pseudo-hashing for quick lookup for headers. We used djb2 hashing function from here: http://www.cse.yorku.ca/~oz/hash.html
     We didn't have to resolve for collision because we used an array with size 132 that resulted in unique mappings.
+
+    In lieu of the default thread ID set in the pthread_create function, we used our own counter (an int) as the unique ID of each thread.
+
+    In order to avoid race conditions, we used two mutex locks in this project: one for printing output and one for accessing or modifying the global counter variable.
+	This way, only one thread could change the global counter at a time, and there was no chance of the counter getting unexpectedly changed between accesses to it in the same thread.
+	In addition, we were able to avoid mangled outputs by only allowing one thread to print to STDOUT at a time.
